@@ -12,9 +12,7 @@ type Config struct {
 		Headers map[string]string
 	}
 	DB struct {
-		Engine    string
-		Path      string
-		Options   map[string]string
-		Namespace string
+		Hostname string
+		Port     int
 	}
 }

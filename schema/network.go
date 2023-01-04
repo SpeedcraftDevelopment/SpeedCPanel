@@ -1,7 +1,6 @@
 package schema
 
 type Network struct {
-	ID         string
-	Name       string
-	Containers []Container
+	Name       string      `bson:"name"`
+	Containers []Container `bson:"containers"`
 }
