@@ -74,6 +74,7 @@ func createNetwork(c echo.Context) error {
 		res.NetworkCreateResponse = response
 		res.MongoIDs.NetworkID = result.InsertedID.(int)
 		res.MongoIDs.OwnerID = result2.UpsertedID.(int)
+		res.MongoIDs.IsTeam = teamowner
 		return c.JSON(http.StatusAccepted, res)
 	} else {
 		return err
