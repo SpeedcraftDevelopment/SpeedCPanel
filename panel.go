@@ -85,7 +85,8 @@ func main() {
 		SigningKey:    key,
 	}
 	server.Use(echojwt.WithConfig(jwtconfig))
-	server.POST("/api/v1/network", createNetwork)
+	api := echo.New().Group("/api/v1")
+	api.POST("/network", createNetwork)
 }
 
 func LogError(err error) {
