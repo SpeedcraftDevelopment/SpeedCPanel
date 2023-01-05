@@ -32,6 +32,7 @@ var (
 type jwtCustomClaims struct {
 	UserID   int    `json:"id"`
 	Username string `json:"name"`
+	TeamID   int    `json:"team"`
 	Plan     string `json:"subscription"`
 	jwt.RegisteredClaims
 }

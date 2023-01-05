@@ -10,6 +10,7 @@ import (
 	"github.com/golang-jwt/jwt"
 	"github.com/labstack/echo/v4"
 	"go.mongodb.org/mongo-driver/bson"
+	"go.mongodb.org/mongo-driver/mongo"
 )
 
 func createNetwork(c echo.Context) error {
@@ -31,16 +32,48 @@ func createNetwork(c echo.Context) error {
 		}
 		timeout, cancel := context.WithTimeout(ctx, 10*time.Second)
 		defer cancel()
-		result, err := db.Database(config.DB.Database).Collection("Users").UpdateByID(timeout, claims.UserID, bson.D{{"$addToSet", bson.D{{"networks", schema.Network{
+		teamowner := claims.TeamID != -1
+		result, err := db.Database(config.DB.Database).Collection("Networks").InsertOne(timeout, schema.Network{
+			OwnedByTeam: teamowner,
+			Owner: func(team bool) int {
+				if teamowner {
+					return claims.TeamID
+				} else {
+					return claims.UserID
+				}
+			}(teamowner),
 			Name:       name,
+			DockerID:   response.ID,
 			Containers: make([]schema.Container, 0),
-		}}}}})
+		})
+		var result2 *mongo.UpdateResult
+		result2, err = db.Database(config.DB.Database).Collection(func(team bool) string {
+			if teamowner {
+				return "Teams"
+			} else {
+				return "Users"
+			}
+		}(teamowner)).UpdateByID(ctx, claims.TeamID, bson.D{{
+			"$addToSet",
+			bson.D{{
+				"networks",
+				result.InsertedID.(int),
+			}},
+		}})
+		if err != nil {
+			return err
+		}
 		var res struct {
 			types.NetworkCreateResponse `json:"network_resopnse"`
-			ID                          int `json:"database_response"`
+			MongoIDs                    struct {
+				NetworkID int  `json:"network_id"`
+				OwnerID   int  `json:"owner_id"`
+				IsTeam    bool `json:"team"`
+			} `json:"database_response"`
 		}
 		res.NetworkCreateResponse = response
-		res.ID = result.UpsertedID.(int)
+		res.MongoIDs.NetworkID = result.InsertedID.(int)
+		res.MongoIDs.OwnerID = result2.UpsertedID.(int)
 		return c.JSON(http.StatusAccepted, res)
 	} else {
 		return err

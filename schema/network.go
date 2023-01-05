@@ -1,6 +1,9 @@
 package schema
 
 type Network struct {
-	Name       string      `bson:"name"`
-	Containers []Container `bson:"containers"`
+	OwnedByTeam bool        `bson:"team"`
+	Owner       int         `bson:"owner"`
+	Name        string      `bson:"name"`
+	DockerID    string      `bson:"docker"`
+	Containers  []Container `bson:"containers"`
 }
