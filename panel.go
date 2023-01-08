@@ -40,10 +40,10 @@ type jwtCustomClaims struct {
 func main() {
 	ctx, cancel := context.WithCancel(context.Background())
 	logFile, err := os.OpenFile(fmt.Sprintf("SpeedCPanel-%s-%s-%s-%s꞉%s꞉%s.log", fmt.Sprint(time.Now().Year()), time.Now().Month().String(), fmt.Sprint(time.Now().Day()), fmt.Sprint(time.Now().Hour()), fmt.Sprint(time.Now().Minute()), fmt.Sprint(time.Now().Second())), os.O_CREATE|os.O_APPEND|os.O_RDWR, 0666)
-	defer logFile.Close()
 	if err != nil {
 		panic(err)
 	}
+	defer logFile.Close()
 	log = logging.New(io.MultiWriter(os.Stdout, logFile), "SpeedPanel", logging.Default().Flags())
 	configData, err := ioutil.ReadFile("config.toml")
 	LogError(err)
@@ -65,8 +65,8 @@ func main() {
 			config.Docker.TLSConfig.CertPath,
 			config.Docker.TLSConfig.KeyPath),
 		docker.WithHTTPHeaders(config.Docker.Headers))
-	defer client.Close()
 	LogError(err)
+	defer client.Close()
 	server := echo.New()
 	defer server.Close()
 	defer cancel()
@@ -87,6 +87,7 @@ func main() {
 	server.Use(echojwt.WithConfig(jwtconfig))
 	api := echo.New().Group("/api/v1")
 	api.POST("/network", createNetwork)
+	api.POST("/:networkID/container", createContainer)
 }
 
 func LogError(err error) {

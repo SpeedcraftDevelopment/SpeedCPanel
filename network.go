@@ -44,8 +44,11 @@ func createNetwork(c echo.Context) error {
 			}(teamowner),
 			Name:       name,
 			DockerID:   response.ID,
-			Containers: make([]schema.Container, 0),
+			Containers: make([]int, 0),
 		})
+		if err != nil {
+			return err
+		}
 		var result2 *mongo.UpdateResult
 		result2, err = db.Database(config.DB.Database).Collection(func(team bool) string {
 			if teamowner {

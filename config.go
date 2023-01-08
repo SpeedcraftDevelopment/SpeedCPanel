@@ -16,4 +16,5 @@ type Config struct {
 		Port     int
 		Database string
 	}
+	Images map[string]string
 }
