@@ -13,6 +13,7 @@ import (
 	"github.com/golang-jwt/jwt"
 	"github.com/labstack/echo/v4"
 	"go.mongodb.org/mongo-driver/bson"
+	"go.mongodb.org/mongo-driver/mongo"
 )
 
 type ServerCreateParams struct {
@@ -65,12 +66,35 @@ func createContainer(c echo.Context) error {
 					},
 				},
 			},
-			Networks: []swarm.NetworkAttachmentConfig{swarm.NetworkAttachmentConfig{Target: network.DockerID}},
+			Networks: []swarm.NetworkAttachmentConfig{{Target: network.DockerID}},
 		}, types.ServiceCreateOptions{})
 		if err != nil {
 			return err
 		}
-		return c.JSON(http.StatusAccepted, result)
+		mongoresult, err := db.Database(config.DB.Database).Collection("Containers").InsertOne(timeoutCtx, schema.Container{
+			DockerID: result.ID,
+			Name:     params.Name,
+			Image:    config.Images[params.Image],
+		})
+		if err != nil {
+			return err
+		}
+		netupdateresult, err := db.Database(config.DB.Database).Collection("Networks").UpdateByID(timeoutCtx, params.NetworkId, bson.D{{
+			"$addToSet",
+			bson.D{{
+				"Containers",
+				mongoresult.InsertedID,
+			}},
+		}})
+		var finalresult struct {
+			types.ServiceCreateResponse
+			mongo.InsertOneResult
+			mongo.UpdateResult
+		}
+		finalresult.ServiceCreateResponse = result
+		finalresult.InsertOneResult = *mongoresult
+		finalresult.UpdateResult = *netupdateresult
+		return c.JSON(http.StatusAccepted, finalresult)
 	} else {
 		return err
 	}
