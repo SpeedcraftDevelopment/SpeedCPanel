@@ -1,0 +1,143 @@
+openapi: '3.0.2'
+info:
+  title: SpeedPanel Core API
+  version: '0.1'
+servers:
+  - url: https://{host}:{port}/api/v1
+    variables:
+      "host": 
+        default: localhost
+      "port":
+        default: "80"
+security:
+  - jwtUserToken: []
+
+paths:
+  /network:
+    post:
+      parameters:
+        - in: "cookie"
+          name: "name"
+          required: true
+          schema:
+            type: string
+      responses:
+        '202':
+          description: Success
+          content:
+            "application/json":
+              schema:
+                "$ref": '#/components/schemas/NetworkCreateSuccess'
+  /{networkID}/container:
+    post:
+      parameters:
+        - in: path
+          name: networkID
+          required: true
+          schema:
+            type: string
+        - in: header
+          name: X-Docker-Image
+          required: true
+          schema:
+            type: string
+      requestBody:
+        description: Must be JSON only
+        content:
+          "application/json":
+            schema:
+              "$ref": "#/components/schemas/ContainerCreateRequestBody"
+      responses:
+        '202':
+          description: Success
+          content:
+            "application/json":
+              schema:
+                "$ref": "#/components/schemas/ServerCreateSuccess"
+components:
+  schemas:
+    NetworkCreateSuccess:
+      type: object
+      properties:
+        network_response:
+          "$ref": "#/components/schemas/NetworkCreateResponseDocker"
+        database_response:
+          nullable: false
+          type: object
+          properties:
+            network_id:
+              type: integer
+            owner_id:
+              type: integer
+            team:
+              type: boolean
+    NetworkCreateResponseDocker:
+      type: object
+      properties:
+        Id:
+          type: string
+          nullable: false
+        Warning:
+          type: string
+          nullable: true
+    ContainerCreateRequestBody:
+      type: object
+      properties:
+        name:
+          type: string
+          nullable: false
+        hostname: 
+          type: string
+          nullable: false
+          pattern: ^(?=.{1,255}$)[0-9A-Za-z](?:(?:[0-9A-Za-z]|-){0,61}[0-9A-Za-z])?(?:\.[0-9A-Za-z](?:(?:[0-9A-Za-z]|-){0,61}[0-9A-Za-z])?)*\.?$
+        version:
+          type: string
+          nullable: false
+        type:
+          type: string
+          nullable: false
+        premium:
+          type: boolean
+          nullable: false
+        modpack:
+          type: string
+          nullable: true
+    ServiceCreateResponse:
+      type: object
+      properties:
+        ID:
+          type: string
+          nullable: false
+        Warnings:
+          type: array
+          nullable: true
+    MongoInsertResult:
+      type: object
+      properties:
+        InsertedID:
+          type: integer
+    MongoUpdateResult:
+      type: object
+      properties:
+        MatchedCount:
+          type: integer
+        ModifiedCount:
+          type: integer
+        UpsertedCount:
+          type: integer
+        UpsertedID:
+          type: integer
+    ServerCreateSuccess:
+      type: object
+      properties:
+        server_create:
+          "$ref": "#/components/schemas/ServiceCreateResponse"
+        server_insert_result:
+          "$ref": "#/components/schemas/MongoInsertResult"
+        
+  securitySchemes:
+    jwtUserToken:
+      type: http
+      description: "A JWT token containing the data of the user."
+      scheme: "bearer"
+      bearerFormat: "Json Object containing the user's id, the username, the Team's Id if the user is in one or -1 if he isn't and the name of the subscription plan as defined in the config.toml file."

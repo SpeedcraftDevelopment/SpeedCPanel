@@ -18,13 +18,13 @@ import (
 
 type ServerCreateParams struct {
 	Name      string `json:"name"`
-	Hostname  string `path:"hostname"`
+	Hostname  string `json:"hostname"`
 	NetworkId int    `path:"networkID"`
 	Version   string `json:"version"`
 	Image     string `head:"X-Docker-Image"`
 	Type      string `json:"type"`
 	Premium   bool   `json:"premium"`
-	Modpack   string `json:"modpack"`
+	Modpack   string `json:"modpack,omitempty"`
 }
 
 func createContainer(c echo.Context) error {
@@ -87,9 +87,9 @@ func createContainer(c echo.Context) error {
 			}},
 		}})
 		var finalresult struct {
-			types.ServiceCreateResponse
-			mongo.InsertOneResult
-			mongo.UpdateResult
+			types.ServiceCreateResponse `json:"server_create"`
+			mongo.InsertOneResult       `json:"server_insert_result"`
+			mongo.UpdateResult          `json:"network_update_result"`
 		}
 		finalresult.ServiceCreateResponse = result
 		finalresult.InsertOneResult = *mongoresult
