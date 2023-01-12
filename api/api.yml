@@ -111,6 +111,8 @@ components:
         Warnings:
           type: array
           nullable: true
+          items:
+            type: string
     MongoInsertResult:
       type: object
       properties:
