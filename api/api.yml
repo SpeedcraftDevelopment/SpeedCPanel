@@ -134,6 +134,8 @@ components:
           "$ref": "#/components/schemas/ServiceCreateResponse"
         server_insert_result:
           "$ref": "#/components/schemas/MongoInsertResult"
+        network_update_result:
+          "$ref": "#/components/schemas/MongoUpdateResult"
         
   securitySchemes:
     jwtUserToken:
