@@ -62,6 +62,36 @@ paths:
             "application/json":
               schema:
                 "$ref": "#/components/schemas/ServerCreateSuccess"
+  /rcon:
+    get:
+      parameters:
+        - in: query
+          name: uname
+          required: true
+          schema:
+            type: string
+        - in: header
+          name: X-RCON-Pass
+          required: true
+          schema:
+            type: string
+      responses:
+        '200':
+          description: Success
+          content:
+            "text/event-stream":
+              schema:
+                type: string
+                format: binaty
+                description: A stream of RCON responses.
+          headers:
+            "Transfer Encoding":
+              description: chunked
+              schema:
+                type: string
+                pattern: ^chunked$
+        '500':
+          description: Rcon Error
 components:
   schemas:
     NetworkCreateSuccess:
