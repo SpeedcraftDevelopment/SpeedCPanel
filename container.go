@@ -13,7 +13,6 @@ import (
 	"github.com/golang-jwt/jwt"
 	"github.com/labstack/echo/v4"
 	"go.mongodb.org/mongo-driver/bson"
-	"go.mongodb.org/mongo-driver/mongo"
 )
 
 type ServerCreateParams struct {
@@ -88,12 +87,22 @@ func createContainer(c echo.Context) error {
 		}})
 		var finalresult struct {
 			types.ServiceCreateResponse `json:"server_create"`
-			mongo.InsertOneResult       `json:"server_insert_result"`
-			mongo.UpdateResult          `json:"network_update_result"`
+			InsertOneResult             struct {
+				InsertedID int
+			} `json:"server_insert_result"`
+			UpdateResult struct {
+				MatchedCount  int64
+				ModifiedCount int64
+				UpsertedCount int64
+				UpsertedID    int
+			} `json:"network_update_result"`
 		}
 		finalresult.ServiceCreateResponse = result
-		finalresult.InsertOneResult = *mongoresult
-		finalresult.UpdateResult = *netupdateresult
+		finalresult.InsertOneResult.InsertedID = mongoresult.InsertedID.(int)
+		finalresult.UpdateResult.MatchedCount = netupdateresult.MatchedCount
+		finalresult.UpdateResult.ModifiedCount = netupdateresult.ModifiedCount
+		finalresult.UpdateResult.UpsertedCount = netupdateresult.UpsertedCount
+		finalresult.UpdateResult.UpsertedID = netupdateresult.UpsertedID.(int)
 		return c.JSON(http.StatusAccepted, finalresult)
 	} else {
 		return err

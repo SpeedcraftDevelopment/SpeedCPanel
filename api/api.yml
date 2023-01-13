@@ -11,6 +11,8 @@ servers:
         default: "80"
 security:
   - jwtUserToken: []
+  - apiKeyPrivate: []
+  - apiKeyClient: []
 
 paths:
   /network:
@@ -21,6 +23,9 @@ paths:
           required: true
           schema:
             type: string
+      security:
+        - jwtUserToken: []
+        - apiKeyPrivate: []
       responses:
         '202':
           description: Success
@@ -41,6 +46,9 @@ paths:
           required: true
           schema:
             type: string
+      security:
+        - jwtUserToken: []
+        - apiKeyPrivate: []
       requestBody:
         description: Must be JSON only
         content:
@@ -145,3 +153,13 @@ components:
       description: "A JWT token containing the data of the user."
       scheme: "bearer"
       bearerFormat: "Json Object containing the user's id, the username, the Team's Id if the user is in one or -1 if he isn't and the name of the subscription plan as defined in the config.toml file."
+    apiKeyPrivate:
+      type: apiKey
+      in: header
+      name: X-API-Key
+      description: Server side API-Keys defined in the config.toml file. Used by the frontend to make requests to the core.
+    apiKeyClient:
+      type: apiKey
+      in: header
+      name: X-API-Key
+      description: API Keys stored in the database to allow users to fetch statistics or to call RCON.
