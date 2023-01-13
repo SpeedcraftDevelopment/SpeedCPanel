@@ -85,9 +85,10 @@ func main() {
 		SigningKey:    key,
 	}
 	server.Use(echojwt.WithConfig(jwtconfig))
+	privateApiKeys := APIKey{config.ApiKeys}
 	api := echo.New().Group("/api/v1")
-	api.POST("/network", createNetwork)
-	api.POST("/:networkID/container", createContainer)
+	api.POST("/network", createNetwork, privateApiKeys.Process)
+	api.POST("/:networkID/container", createContainer, privateApiKeys.Process)
 }
 
 func LogError(err error) {
