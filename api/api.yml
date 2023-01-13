@@ -82,6 +82,18 @@ paths:
           description: RCON unauthorised
         '500':
           description: Internal RCON Error
+    delete:
+      parameters:
+        - in: path
+          name: service
+          required: true
+          schema:
+            type: string
+      responses:
+        '200':
+          description: Successful rcon client shutdown
+        '500':
+          description: An error occured while closing connection to remote console
 components:
   schemas:
     NetworkCreateSuccess:

@@ -90,6 +90,7 @@ func main() {
 	api.POST("/network", createNetwork, privateApiKeys.Process)
 	api.POST("/:networkID/container", createContainer, privateApiKeys.Process)
 	api.POST("/:service/console", RCONExecuteCommand)
+	api.DELETE("/:service/console", RCONShutdown)
 }
 
 func LogError(err error) {

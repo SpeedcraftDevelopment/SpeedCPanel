@@ -64,3 +64,12 @@ func RCONExecuteCommand(c echo.Context) error {
 		return err
 	}
 }
+
+func RCONShutdown(c echo.Context) error {
+	if err := rconClients[c.Param("service")].Value(c.Param("service")).(*rcon.RemoteConsole).Close(); err != nil {
+		return echo.NewHTTPError(http.StatusInternalServerError, err)
+	}
+	rconCancels[c.Param("service")]()
+	c.Response().WriteHeader(http.StatusOK)
+	return nil
+}
