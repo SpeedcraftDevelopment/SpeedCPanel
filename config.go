@@ -18,4 +18,8 @@ type Config struct {
 	}
 	Images  map[string]string
 	ApiKeys []string
+	Plans   map[string]struct {
+		MaxPlayers int
+		RCONTime   int
+	}
 }

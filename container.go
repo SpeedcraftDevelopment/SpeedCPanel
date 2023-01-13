@@ -13,6 +13,7 @@ import (
 	"github.com/golang-jwt/jwt"
 	"github.com/labstack/echo/v4"
 	"go.mongodb.org/mongo-driver/bson"
+	"go.mongodb.org/mongo-driver/bson/primitive"
 )
 
 type ServerCreateParams struct {
@@ -74,6 +75,7 @@ func createContainer(c echo.Context) error {
 			DockerID: result.ID,
 			Name:     params.Name,
 			Image:    config.Images[params.Image],
+			Hostname: params.Hostname,
 		})
 		if err != nil {
 			return err
@@ -88,22 +90,22 @@ func createContainer(c echo.Context) error {
 		var finalresult struct {
 			types.ServiceCreateResponse `json:"server_create"`
 			InsertOneResult             struct {
-				InsertedID int
+				InsertedID string
 			} `json:"server_insert_result"`
 			UpdateResult struct {
 				MatchedCount  int64
 				ModifiedCount int64
 				UpsertedCount int64
-				UpsertedID    int
+				UpsertedID    string
 			} `json:"network_update_result"`
 		}
 		finalresult.ServiceCreateResponse = result
-		finalresult.InsertOneResult.InsertedID = mongoresult.InsertedID.(int)
+		finalresult.InsertOneResult.InsertedID = mongoresult.InsertedID.(primitive.ObjectID).Hex()
 		finalresult.UpdateResult.MatchedCount = netupdateresult.MatchedCount
 		finalresult.UpdateResult.ModifiedCount = netupdateresult.ModifiedCount
 		finalresult.UpdateResult.UpsertedCount = netupdateresult.UpsertedCount
-		finalresult.UpdateResult.UpsertedID = netupdateresult.UpsertedID.(int)
-		return c.JSON(http.StatusAccepted, finalresult)
+		finalresult.UpdateResult.UpsertedID = netupdateresult.UpsertedID.(primitive.ObjectID).Hex()
+		return c.JSON(http.StatusCreated, finalresult)
 	} else {
 		return err
 	}

@@ -27,7 +27,7 @@ paths:
         - jwtUserToken: []
         - apiKeyPrivate: []
       responses:
-        '202':
+        '201':
           description: Success
           content:
             "application/json":
@@ -56,17 +56,17 @@ paths:
             schema:
               "$ref": "#/components/schemas/ContainerCreateRequestBody"
       responses:
-        '202':
+        '201':
           description: Success
           content:
             "application/json":
               schema:
                 "$ref": "#/components/schemas/ServerCreateSuccess"
-  /rcon:
-    get:
+  /{service}/console:
+    post:
       parameters:
-        - in: query
-          name: uname
+        - in: path
+          name: service
           required: true
           schema:
             type: string
@@ -78,20 +78,10 @@ paths:
       responses:
         '200':
           description: Success
-          content:
-            "text/event-stream":
-              schema:
-                type: string
-                format: binaty
-                description: A stream of RCON responses.
-          headers:
-            "Transfer Encoding":
-              description: chunked
-              schema:
-                type: string
-                pattern: ^chunked$
+        '401':
+          description: RCON unauthorised
         '500':
-          description: Rcon Error
+          description: Internal RCON Error
 components:
   schemas:
     NetworkCreateSuccess:
@@ -104,9 +94,9 @@ components:
           type: object
           properties:
             network_id:
-              type: integer
+              type: string
             owner_id:
-              type: integer
+              type: string
             team:
               type: boolean
     NetworkCreateResponseDocker:
@@ -155,7 +145,7 @@ components:
       type: object
       properties:
         InsertedID:
-          type: integer
+          type: string
     MongoUpdateResult:
       type: object
       properties:
@@ -166,7 +156,7 @@ components:
         UpsertedCount:
           type: integer
         UpsertedID:
-          type: integer
+          type: string
     ServerCreateSuccess:
       type: object
       properties:

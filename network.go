@@ -10,6 +10,7 @@ import (
 	"github.com/golang-jwt/jwt"
 	"github.com/labstack/echo/v4"
 	"go.mongodb.org/mongo-driver/bson"
+	"go.mongodb.org/mongo-driver/bson/primitive"
 	"go.mongodb.org/mongo-driver/mongo"
 )
 
@@ -69,16 +70,16 @@ func createNetwork(c echo.Context) error {
 		var res struct {
 			types.NetworkCreateResponse `json:"network_resopnse"`
 			MongoIDs                    struct {
-				NetworkID int  `json:"network_id"`
-				OwnerID   int  `json:"owner_id"`
-				IsTeam    bool `json:"team"`
+				NetworkID string `json:"network_id"`
+				OwnerID   string `json:"owner_id"`
+				IsTeam    bool   `json:"team"`
 			} `json:"database_response"`
 		}
 		res.NetworkCreateResponse = response
-		res.MongoIDs.NetworkID = result.InsertedID.(int)
-		res.MongoIDs.OwnerID = result2.UpsertedID.(int)
+		res.MongoIDs.NetworkID = result.InsertedID.(primitive.ObjectID).Hex()
+		res.MongoIDs.OwnerID = result2.UpsertedID.(primitive.ObjectID).Hex()
 		res.MongoIDs.IsTeam = teamowner
-		return c.JSON(http.StatusAccepted, res)
+		return c.JSON(http.StatusCreated, res)
 	} else {
 		return err
 	}

@@ -89,7 +89,7 @@ func main() {
 	api := echo.New().Group("/api/v1")
 	api.POST("/network", createNetwork, privateApiKeys.Process)
 	api.POST("/:networkID/container", createContainer, privateApiKeys.Process)
-	api.GET("/rcon", RCONStream)
+	api.POST("/:service/console", RCONExecuteCommand)
 }
 
 func LogError(err error) {
