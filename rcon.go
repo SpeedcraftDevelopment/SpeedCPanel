@@ -3,9 +3,11 @@ package main
 import (
 	"SpeedCPanelManager/schema"
 	"context"
+	"encoding/binary"
 	"net/http"
 	"time"
 
+	"github.com/docker/docker/api/types"
 	"github.com/golang-jwt/jwt"
 	"github.com/james4k/rcon"
 	"github.com/labstack/echo/v4"
@@ -72,4 +74,41 @@ func RCONShutdown(c echo.Context) error {
 	rconCancels[c.Param("service")]()
 	c.Response().WriteHeader(http.StatusOK)
 	return nil
+}
+
+func getLogs(c echo.Context) error {
+	c.Response().Header().Set("Connection", "Keep-Alive")
+	c.Response().Header().Set("Cache-Control", "no-cache")
+	c.Response().Header().Set("Access-Control-Allow-Origin", "*")
+	c.Response().Header().Set("Content-Type", "text/event-stream")
+	reader, err := client.ServiceLogs(ctx, c.Param("service"), types.ContainerLogsOptions{
+		ShowStdout: true,
+		ShowStderr: true,
+		Timestamps: true,
+		Follow:     true,
+		Tail:       "all",
+		Details:    false,
+	})
+	if err != nil {
+		return echo.NewHTTPError(http.StatusInternalServerError, err)
+	}
+	defer func() {
+		if err = reader.Close(); err != nil {
+			panic(err)
+		}
+	}()
+	hdr := make([]byte, 8)
+	for {
+		if _, err = reader.Read(hdr); err != nil {
+			return echo.NewHTTPError(http.StatusInternalServerError, err)
+		}
+		count := binary.BigEndian.Uint32(hdr[4:])
+		dat := make([]byte, count)
+		if _, err = reader.Read(dat); err != nil {
+			return echo.NewHTTPError(http.StatusInternalServerError, err)
+		}
+		c.Response().Write(dat)
+		c.Response().Flush()
+	}
+
 }
