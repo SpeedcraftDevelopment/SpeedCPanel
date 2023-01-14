@@ -94,6 +94,44 @@ paths:
           description: Successful rcon client shutdown
         '500':
           description: An error occured while closing connection to remote console
+    get:
+      parameters:
+        - in: path
+          name: service
+          required: true
+          schema:
+            type: string
+      responses:
+        default:
+          description: Stream from docker Service logs.
+          content:
+            "text/event-stream":
+              schema:
+                type: object
+                x-events:
+                  added:
+                    type: object
+                    properties:
+                      message:
+                        type: string
+                      createdAt:
+                        type: string
+                        format: date-time
+                      updated:
+                        type: object
+                        properties:
+                          previous:
+                            type: string
+                          newValue:
+                            type: string
+                          updatedAt:
+                            type: string
+                            format: date-time
+          headers:
+            "Connection":
+              schema:
+                type: string
+                enum: ["Keep-Alive"]
 components:
   schemas:
     NetworkCreateSuccess:

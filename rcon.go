@@ -86,7 +86,7 @@ func getLogs(c echo.Context) error {
 		ShowStderr: true,
 		Timestamps: true,
 		Follow:     true,
-		Tail:       "all",
+		Tail:       "40",
 		Details:    false,
 	})
 	if err != nil {
