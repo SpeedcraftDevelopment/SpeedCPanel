@@ -5,10 +5,12 @@ import (
 	"context"
 	"fmt"
 	"net/http"
+	"regexp"
 	"strconv"
 	"time"
 
 	"github.com/docker/docker/api/types"
+	"github.com/docker/docker/api/types/filters"
 	"github.com/docker/docker/api/types/swarm"
 	"github.com/golang-jwt/jwt"
 	"github.com/labstack/echo/v4"
@@ -106,6 +108,61 @@ func createContainer(c echo.Context) error {
 		finalresult.UpdateResult.UpsertedCount = netupdateresult.UpsertedCount
 		finalresult.UpdateResult.UpsertedID = netupdateresult.UpsertedID.(primitive.ObjectID).Hex()
 		return c.JSON(http.StatusCreated, finalresult)
+	} else {
+		return err
+	}
+}
+
+type ServerUpdateParams struct {
+	Server    string `path:"service"`
+	NetworkId string `header:"Network-ID,omitempty"`
+	Version   string `header:"Version,omitempty"`
+	Port      int    `header:"Port,omitempty"`
+}
+
+func updateService(c echo.Context) error {
+	user := c.Get("user").(*jwt.Token)
+	if err := user.Claims.Valid(); err == nil {
+		var params ServerUpdateParams
+		var cont schema.Container
+		c.Bind(&params)
+		timeout, cancel := context.WithTimeout(ctx, time.Second*10)
+		defer cancel()
+		mongo := db.Database(config.DB.Database).Collection("Containers").FindOne(timeout, bson.M{"_id": params.Server})
+		if err = mongo.Decode(cont); err != nil {
+			return echo.NewHTTPError(http.StatusInternalServerError, err)
+		}
+		servicedata, err := client.ServiceList(timeout, types.ServiceListOptions{
+			Filters: filters.NewArgs(filters.KeyValuePair{"id", cont.DockerID}),
+		})
+		if err != nil {
+			return echo.NewHTTPError(http.StatusInternalServerError, err)
+		}
+		if params.NetworkId != "" {
+			var netwotk schema.Network
+			mongo = db.Database(config.DB.Database).Collection("Networks").FindOne(timeout, bson.M{"_id": params.Server})
+			if err = mongo.Decode(netwotk); err != nil {
+				return echo.NewHTTPError(http.StatusInternalServerError, err)
+			}
+			servicedata[0].Spec.Networks[0] = swarm.NetworkAttachmentConfig{Target: netwotk.DockerID}
+		}
+		if params.Version != "" {
+			env := servicedata[0].Spec.TaskTemplate.ContainerSpec.Env
+			re := regexp.MustCompile(`^VERSION=([0-9]+\.[0-9]+(\.[0-9]+)?)$`)
+			for i, str := range env {
+				if re.Match([]byte(str)) {
+					env[i] = "VERSION=" + params.Version
+				}
+			}
+		}
+		if params.Port != 0 {
+			servicedata[0].Spec.TaskTemplate.ContainerSpec.Labels["traefik.port"] = strconv.Itoa(params.Port)
+		}
+		updateResult, err := client.ServiceUpdate(timeout, cont.DockerID, servicedata[0].Version, servicedata[0].Spec, types.ServiceUpdateOptions{})
+		if err != nil {
+			return echo.NewHTTPError(http.StatusInternalServerError, err)
+		}
+		return c.JSON(http.StatusOK, updateResult)
 	} else {
 		return err
 	}

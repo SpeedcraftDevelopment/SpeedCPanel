@@ -62,6 +62,44 @@ paths:
             "application/json":
               schema:
                 "$ref": "#/components/schemas/ServerCreateSuccess"
+  /{service}:
+    patch:
+      parameters:
+        - in: path
+          name: service
+          required: true
+          schema:
+            type: string
+        - in: header
+          name: Network-ID
+          required: false
+          schema:
+            type: string
+        - in: header
+          name: Version
+          required: false
+          schema:
+            type: string
+            pattern: ^([0-9]+\.[0-9]+(\.[0-9]+)?)$
+        - in: header
+          name: Port
+          required: false
+          schema:
+            type: integer
+      security:
+        - jwtUserToken: []
+        - apiKeyPrivate: []
+      responses:
+        '200':
+          description: Success
+          content:
+            "application/json":
+              schema:
+                type: array
+                items:
+                  type: string
+        '500':
+          description: Internal Server Error
   /{service}/console:
     post:
       parameters:
@@ -75,6 +113,9 @@ paths:
           required: true
           schema:
             type: string
+      security:
+        - jwtUserToken: []
+        - apiKeyPrivate: []
       responses:
         '200':
           description: Success
@@ -89,6 +130,9 @@ paths:
           required: true
           schema:
             type: string
+      security:
+        - jwtUserToken: []
+        - apiKeyPrivate: []
       responses:
         '200':
           description: Successful rcon client shutdown
@@ -101,6 +145,9 @@ paths:
           required: true
           schema:
             type: string
+      security:
+        - jwtUserToken: []
+        - apiKeyPrivate: []
       responses:
         default:
           description: Stream from docker Service logs.
