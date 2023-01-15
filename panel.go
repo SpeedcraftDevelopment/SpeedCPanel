@@ -89,8 +89,9 @@ func main() {
 	api := echo.New().Group("/api/v1")
 	api.POST("/network", createNetwork, privateApiKeys.Process)
 	api.POST("/:networkID/container", createContainer, privateApiKeys.Process)
-	api.POST("/:service/console", RCONExecuteCommand)
-	api.DELETE("/:service/console", RCONShutdown)
+	api.PATCH("/:service", updateService, privateApiKeys.Process)
+	api.POST("/:service/console", RCONExecuteCommand, privateApiKeys.Process)
+	api.DELETE("/:service/console", RCONShutdown, privateApiKeys.Process)
 	api.GET("/:service/console", getLogs)
 }
 
