@@ -22,4 +22,5 @@ type Config struct {
 		MaxPlayers int
 		RCONTime   int
 	}
+	AllowedURLs []string
 }

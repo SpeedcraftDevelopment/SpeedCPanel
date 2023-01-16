@@ -12,8 +12,6 @@ servers:
 security:
   - jwtUserToken: []
   - apiKeyPrivate: []
-  - apiKeyClient: []
-
 paths:
   /network:
     post:
@@ -275,8 +273,3 @@ components:
       in: header
       name: X-API-Key
       description: Server side API-Keys defined in the config.toml file. Used by the frontend to make requests to the core.
-    apiKeyClient:
-      type: apiKey
-      in: header
-      name: X-API-Key
-      description: API Keys stored in the database to allow users to fetch statistics or to call RCON.

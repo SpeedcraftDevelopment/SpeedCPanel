@@ -7,6 +7,7 @@ import (
 	"io"
 	"io/ioutil"
 	logging "log"
+	"net/http"
 	"os"
 	"time"
 
@@ -19,6 +20,7 @@ import (
 	"go.mongodb.org/mongo-driver/mongo/readpref"
 
 	"github.com/labstack/echo/v4"
+	"github.com/labstack/echo/v4/middleware"
 )
 
 var (
@@ -86,12 +88,16 @@ func main() {
 	}
 	server.Use(echojwt.WithConfig(jwtconfig))
 	privateApiKeys := APIKey{config.ApiKeys}
-	api := echo.New().Group("/api/v1")
-	api.POST("/network", createNetwork, privateApiKeys.Process)
-	api.POST("/:networkID/container", createContainer, privateApiKeys.Process)
-	api.PATCH("/:service", updateService, privateApiKeys.Process)
-	api.POST("/:service/console", RCONExecuteCommand, privateApiKeys.Process)
-	api.DELETE("/:service/console", RCONShutdown, privateApiKeys.Process)
+	api := echo.New().Group("/api/v1", privateApiKeys.Process)
+	api.Use(middleware.CORSWithConfig(middleware.CORSConfig{
+		AllowOrigins: config.AllowedURLs,
+		AllowMethods: []string{http.MethodGet, http.MethodPost, http.MethodPatch, http.MethodDelete},
+	}))
+	api.POST("/network", createNetwork)
+	api.POST("/:networkID/container", createContainer)
+	api.PATCH("/:service", updateService)
+	api.POST("/:service/console", RCONExecuteCommand)
+	api.DELETE("/:service/console", RCONShutdown)
 	api.GET("/:service/console", getLogs)
 }
 
