@@ -32,6 +32,7 @@ type ServerCreateParams struct {
 func createContainer(c echo.Context) error {
 	user := c.Get("user").(*jwt.Token)
 	if err := user.Claims.Valid(); err == nil {
+		claims := user.Claims.(*jwtCustomClaims)
 		var params ServerCreateParams
 		c.Bind(&params)
 		var network schema.Network
@@ -78,6 +79,14 @@ func createContainer(c echo.Context) error {
 			Name:     params.Name,
 			Image:    config.Images[params.Image],
 			Hostname: params.Hostname,
+			Owner: func(isTeam bool) string {
+				if isTeam {
+					return claims.TeamID
+				} else {
+					return claims.UserID
+				}
+			}(claims.TeamID != ""),
+			IsOwnerTeam: claims.TeamID != "",
 		})
 		if err != nil {
 			return err
@@ -125,12 +134,16 @@ func updateService(c echo.Context) error {
 	if err := user.Claims.Valid(); err == nil {
 		var params ServerUpdateParams
 		var cont schema.Container
+		claims := user.Claims.(*jwtCustomClaims)
 		c.Bind(&params)
 		timeout, cancel := context.WithTimeout(ctx, time.Second*10)
 		defer cancel()
 		mongo := db.Database(config.DB.Database).Collection("Containers").FindOne(timeout, bson.M{"_id": params.Server})
 		if err = mongo.Decode(cont); err != nil {
 			return echo.NewHTTPError(http.StatusInternalServerError, err)
+		}
+		if claims.UserID != cont.Owner || claims.TeamID != cont.Owner {
+			return echo.NewHTTPError(http.StatusUnauthorized, fmt.Errorf("Attempted unauthorised update of container."))
 		}
 		servicedata, err := client.ServiceList(timeout, types.ServiceListOptions{
 			Filters: filters.NewArgs(filters.KeyValuePair{"id", cont.DockerID}),

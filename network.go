@@ -33,10 +33,10 @@ func createNetwork(c echo.Context) error {
 		}
 		timeout, cancel := context.WithTimeout(ctx, 10*time.Second)
 		defer cancel()
-		teamowner := claims.TeamID != -1
+		teamowner := claims.TeamID != ""
 		result, err := db.Database(config.DB.Database).Collection("Networks").InsertOne(timeout, schema.Network{
 			OwnedByTeam: teamowner,
-			Owner: func(team bool) int {
+			Owner: func(team bool) string {
 				if teamowner {
 					return claims.TeamID
 				} else {
