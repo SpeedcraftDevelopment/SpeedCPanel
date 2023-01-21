@@ -11,7 +11,9 @@ import (
 
 	"github.com/docker/docker/api/types"
 	"github.com/docker/docker/api/types/filters"
+	"github.com/docker/docker/api/types/mount"
 	"github.com/docker/docker/api/types/swarm"
+	"github.com/docker/docker/api/types/volume"
 	"github.com/golang-jwt/jwt"
 	"github.com/labstack/echo/v4"
 	"go.mongodb.org/mongo-driver/bson"
@@ -54,6 +56,19 @@ func createContainer(c echo.Context) error {
 		} else if params.Type == "FTBA" {
 			env = append(env, fmt.Sprintf("FTB_MODPACK_ID=%s", params.Modpack))
 		}
+		volume, err := client.VolumeCreate(timeoutCtx, volume.VolumeCreateBody{
+			Driver: "local",
+			DriverOpts: map[string]string{
+				"type":   "nfs",
+				"o":      "addr=192.168.1.1,rw",
+				"device": fmt.Sprintf("/servers/%s/%s/", claims.UserID, params.Name),
+			},
+			Labels: map[string]string{},
+			Name:   params.Name,
+		})
+		if err != nil {
+			return echo.NewHTTPError(http.StatusInternalServerError, err)
+		}
 		result, err := client.ServiceCreate(timeoutCtx, swarm.ServiceSpec{
 			Annotations: swarm.Annotations{
 				Name: params.Name,
@@ -66,6 +81,12 @@ func createContainer(c echo.Context) error {
 					Labels: map[string]string{
 						"traefik.tcp.routers.mc.rule": "HostSNI(`*`)",
 						"traefik.port":                strconv.Itoa(25565 + len(network.Containers)),
+					},
+					Mounts: []mount.Mount{
+						{
+							Source:   volume.Name,
+							ReadOnly: false,
+						},
 					},
 				},
 			},
