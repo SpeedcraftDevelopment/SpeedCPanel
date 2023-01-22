@@ -7,6 +7,7 @@ import (
 	"net/http"
 	"regexp"
 	"strconv"
+	"strings"
 	"time"
 
 	"github.com/docker/docker/api/types"
@@ -56,11 +57,15 @@ func createContainer(c echo.Context) error {
 		} else if params.Type == "FTBA" {
 			env = append(env, fmt.Sprintf("FTB_MODPACK_ID=%s", params.Modpack))
 		}
+		networkInspect, err := client.NetworkInspect(timeoutCtx, network.DockerID, types.NetworkInspectOptions{})
+		if err != nil {
+			return echo.NewHTTPError(http.StatusInternalServerError, err)
+		}
 		volume, err := client.VolumeCreate(timeoutCtx, volume.VolumeCreateBody{
 			Driver: "local",
 			DriverOpts: map[string]string{
 				"type":   "nfs",
-				"o":      "addr=192.168.1.1,rw",
+				"o":      fmt.Sprintf("addr=%s,rw", networkInspect.Containers[network.SpecialContainers.NFS].IPv4Address),
 				"device": fmt.Sprintf("/servers/%s/%s/", claims.UserID, params.Name),
 			},
 			Labels: map[string]string{},
@@ -69,6 +74,8 @@ func createContainer(c echo.Context) error {
 		if err != nil {
 			return echo.NewHTTPError(http.StatusInternalServerError, err)
 		}
+		servicename := strings.ToLower(strings.Replace(params.Name, " ", "", -1))
+		port := 25565 + len(network.Containers)
 		result, err := client.ServiceCreate(timeoutCtx, swarm.ServiceSpec{
 			Annotations: swarm.Annotations{
 				Name: params.Name,
@@ -79,13 +86,17 @@ func createContainer(c echo.Context) error {
 					Env:      env,
 					Hostname: params.Hostname,
 					Labels: map[string]string{
-						"traefik.tcp.routers.mc.rule": "HostSNI(`*`)",
-						"traefik.port":                strconv.Itoa(25565 + len(network.Containers)),
+						"traefik.enable":                 "true",
+						"traefik.tcp.routers.mc.rule":    "HostSNI(`*`)",
+						"traefik.tcp.routers.mc.service": servicename,
+						fmt.Sprintf("traefik.tcp.services.%s.loadbalancer.port", servicename): strconv.Itoa(port),
+						"traefik.port": strconv.Itoa(port),
 					},
 					Mounts: []mount.Mount{
 						{
 							Source:   volume.Name,
 							ReadOnly: false,
+							Target:   volume.Mountpoint,
 						},
 					},
 				},
@@ -107,6 +118,15 @@ func createContainer(c echo.Context) error {
 					return claims.UserID
 				}
 			}(claims.TeamID != ""),
+			TraefikService: servicename,
+			Port:           port,
+			Volume: struct {
+				Name string "bson:\"name\""
+				Path string "bson:\"path\""
+			}{
+				Name: volume.Name,
+				Path: volume.Mountpoint,
+			},
 			IsOwnerTeam: claims.TeamID != "",
 		})
 		if err != nil {
