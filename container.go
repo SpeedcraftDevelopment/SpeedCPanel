@@ -96,7 +96,7 @@ func createContainer(c echo.Context) error {
 						{
 							Source:   volume.Name,
 							ReadOnly: false,
-							Target:   volume.Mountpoint,
+							Target:   "/data/",
 						},
 					},
 				},
