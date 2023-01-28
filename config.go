@@ -23,4 +23,7 @@ type Config struct {
 		RCONTime   int
 	}
 	AllowedURLs []string
+	Traefik     struct {
+		ConfigPath string
+	}
 }

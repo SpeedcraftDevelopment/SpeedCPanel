@@ -3,10 +3,13 @@ package main
 import (
 	"SpeedCPanelManager/schema"
 	"context"
+	"fmt"
 	"net/http"
 	"time"
 
 	"github.com/docker/docker/api/types"
+	"github.com/docker/docker/api/types/mount"
+	"github.com/docker/docker/api/types/swarm"
 	"github.com/golang-jwt/jwt"
 	"github.com/labstack/echo/v4"
 	"go.mongodb.org/mongo-driver/bson"
@@ -29,10 +32,36 @@ func createNetwork(c echo.Context) error {
 			Ingress:        false,
 		})
 		if err != nil {
-			return err
+			return echo.NewHTTPError(http.StatusInternalServerError, err)
 		}
 		timeout, cancel := context.WithTimeout(ctx, 10*time.Second)
 		defer cancel()
+		createTraefikContainer, err := client.ServiceCreate(timeout, swarm.ServiceSpec{
+			Annotations: swarm.Annotations{
+				Name: fmt.Sprintf("%s_traefik", name),
+			},
+			TaskTemplate: swarm.TaskSpec{
+				ContainerSpec: &swarm.ContainerSpec{
+					Image:    config.Images["traefik"],
+					TTY:      true,
+					Hostname: fmt.Sprintf("%s-traefik", name),
+					Mounts: []mount.Mount{
+						{
+							Source: config.Traefik.ConfigPath,
+							Target: "/etc/traefik/traefik.toml",
+						},
+						{
+							Source: "/var/run/docker.sock",
+							Target: "/var/run/docker.sock",
+						},
+					},
+				},
+			},
+			Networks: []swarm.NetworkAttachmentConfig{{Target: response.ID}},
+		}, types.ServiceCreateOptions{})
+		if err != nil {
+			return echo.NewHTTPError(http.StatusInternalServerError, err)
+		}
 		teamowner := claims.TeamID != ""
 		result, err := db.Database(config.DB.Database).Collection("Networks").InsertOne(timeout, schema.Network{
 			OwnedByTeam: teamowner,
@@ -46,9 +75,15 @@ func createNetwork(c echo.Context) error {
 			Name:       name,
 			DockerID:   response.ID,
 			Containers: make([]int, 0),
+			SpecialContainers: struct {
+				Traefik string "bson:\"traefik\""
+				NFS     string "bson:\"nfs\""
+			}{
+				Traefik: createTraefikContainer.ID,
+			},
 		})
 		if err != nil {
-			return err
+			return echo.NewHTTPError(http.StatusInternalServerError, err)
 		}
 		var result2 *mongo.UpdateResult
 		result2, err = db.Database(config.DB.Database).Collection(func(team bool) string {
@@ -65,7 +100,7 @@ func createNetwork(c echo.Context) error {
 			}},
 		}})
 		if err != nil {
-			return err
+			return echo.NewHTTPError(http.StatusInternalServerError, err)
 		}
 		var res struct {
 			types.NetworkCreateResponse `json:"network_resopnse"`
