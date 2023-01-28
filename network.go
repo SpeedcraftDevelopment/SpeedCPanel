@@ -47,12 +47,14 @@ func createNetwork(c echo.Context) error {
 					Hostname: fmt.Sprintf("%s-traefik", name),
 					Mounts: []mount.Mount{
 						{
-							Source: config.Traefik.ConfigPath,
-							Target: "/etc/traefik/traefik.toml",
+							Source:   config.Traefik.ConfigPath,
+							Target:   "/etc/traefik/traefik.toml",
+							ReadOnly: true,
 						},
 						{
-							Source: "/var/run/docker.sock",
-							Target: "/var/run/docker.sock",
+							Source:   "/var/run/docker.sock",
+							Target:   "/var/run/docker.sock",
+							ReadOnly: true,
 						},
 					},
 				},
