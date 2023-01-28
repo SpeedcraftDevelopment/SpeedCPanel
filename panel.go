@@ -73,6 +73,7 @@ func main() {
 	defer server.Close()
 	defer cancel()
 	encryptedKey, err := ioutil.ReadFile(os.Getenv("PEMPath"))
+	LogError(err)
 	decryptedKey := make([]byte, len(encryptedKey))
 	cipher, err := aes.NewCipher([]byte(os.Getenv("JWTSecret")))
 	LogError(err)
