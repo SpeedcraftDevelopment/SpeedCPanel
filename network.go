@@ -62,6 +62,31 @@ func createNetwork(c echo.Context) error {
 		if err != nil {
 			return echo.NewHTTPError(http.StatusInternalServerError, err)
 		}
+		createNFSContainer, err := client.ServiceCreate(timeout, swarm.ServiceSpec{
+			Annotations: swarm.Annotations{
+				Name: fmt.Sprintf("%s_traefik", name),
+			},
+			TaskTemplate: swarm.TaskSpec{
+				ContainerSpec: &swarm.ContainerSpec{
+					Image:    config.Images["file_storage"],
+					TTY:      true,
+					Hostname: fmt.Sprintf("%s-nfs", name),
+					Labels: map[string]string{
+						"traefik.enable":                                      "true",
+						"traefik.tcp.routers.nfs-router.rule":                 "HostSNI(`*`)",
+						"traefik.tcp.routers.nfs-router.service":              "nfs-service",
+						"traefik.tcp.services.nfs-service.loadbalancer.port":  "2049",
+						"traefik.tcp.routers.sftp-router.rule":                "HostSNI(`*`)",
+						"traefik.tcp.routers.sftp-router.service":             "sftp-service",
+						"traefik.tcp.services.sftp-service.loadbalancer.port": "22",
+					},
+				},
+			},
+			Networks: []swarm.NetworkAttachmentConfig{{Target: response.ID}},
+		}, types.ServiceCreateOptions{})
+		if err != nil {
+			return echo.NewHTTPError(http.StatusInternalServerError, err)
+		}
 		teamowner := claims.TeamID != ""
 		result, err := db.Database(config.DB.Database).Collection("Networks").InsertOne(timeout, schema.Network{
 			OwnedByTeam: teamowner,
@@ -80,6 +105,7 @@ func createNetwork(c echo.Context) error {
 				NFS     string "bson:\"nfs\""
 			}{
 				Traefik: createTraefikContainer.ID,
+				NFS:     createNFSContainer.ID,
 			},
 		})
 		if err != nil {
