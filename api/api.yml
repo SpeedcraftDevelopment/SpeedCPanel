@@ -89,13 +89,7 @@ paths:
         - apiKeyPrivate: []
       responses:
         '200':
-          description: Success
-          content:
-            "application/json":
-              schema:
-                type: array
-                items:
-                  type: string
+          "$ref": "#/components/responses/UpdateResponse"
         '500':
           description: Internal Server Error
   /{service}/console:
@@ -177,7 +171,41 @@ paths:
               schema:
                 type: string
                 enum: ["Keep-Alive"]
+  /{service}/plugins:
+    patch:
+      parameters:
+        - in: path
+          name: service
+          required: true
+          schema:
+            type: string
+        - in: header
+          name: X-Plugin-ID
+          required: true
+          schema:
+            type: string
+      responses:
+        '200':
+          "$ref": "#/components/responses/UpdateResponse"
+        '208':
+          description: "plugin already present"
+        '401':
+          description: "attempted unauthorised update of container"
+        '500':
+          description: "Internal Server Error"
 components:
+  responses:
+    UpdateResponse:
+      description: Success
+      content:
+        "application/json":
+          schema:
+            type: object
+            properties:
+              Warnings:
+                type: array
+                items:
+                  type: string
   schemas:
     NetworkCreateSuccess:
       type: object
