@@ -99,6 +99,7 @@ func main() {
 	api.POST("/:service/console", RCONExecuteCommand)
 	api.DELETE("/:service/console", RCONShutdown)
 	api.GET("/:service/console", getLogs)
+	api.PATCH("/:service/plugins", addPlugin)
 }
 
 func LogError(err error) {
