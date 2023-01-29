@@ -67,3 +67,51 @@ func addPlugin(c echo.Context) error {
 		return err
 	}
 }
+
+func deletePlugin(c echo.Context) error {
+	user := c.Get("user").(*jwt.Token)
+	if err := user.Claims.Valid(); err == nil {
+		var params AddPluginParams
+		var cont schema.Container
+		hasSpigetVariable := false
+		claims := user.Claims.(*jwtCustomClaims)
+		c.Bind(&params)
+		timeout, cancel := context.WithTimeout(ctx, time.Second*10)
+		defer cancel()
+		mongo := db.Database(config.DB.Database).Collection("Containers").FindOne(timeout, bson.M{"_id": params.Server})
+		if err = mongo.Decode(cont); err != nil {
+			return echo.NewHTTPError(http.StatusInternalServerError, err)
+		}
+		if claims.UserID != cont.Owner || claims.TeamID != cont.Owner {
+			return echo.NewHTTPError(http.StatusUnauthorized, fmt.Errorf("attempted unauthorised update of container"))
+		}
+		servicedata, err := client.ServiceList(timeout, types.ServiceListOptions{
+			Filters: filters.NewArgs(filters.KeyValuePair{"id", cont.DockerID}),
+		})
+		if err != nil {
+			return echo.NewHTTPError(http.StatusInternalServerError, err)
+		}
+		re := regexp.MustCompile(`^(SPIGET_RESOURCES=)(([0-9]+)\,\s*)*(?P<pluginId>[0-9]+)$`)
+		for index, env := range servicedata[0].Spec.TaskTemplate.ContainerSpec.Env {
+			if re.MatchString(env) {
+				hasSpigetVariable = true
+				plugins := strings.Split(strings.Trim(env, "SPIGET_ROUC="), ",")
+				if contains(plugins, compareString(params.PluginId)) {
+					servicedata[0].Spec.TaskTemplate.ContainerSpec.Env[index] = fmt.Sprintf("SPIGET_RESOURCES=%s", stringArrayToString(deleteFromAray(plugins, compareString(params.PluginId)), ","))
+				} else {
+					return echo.NewHTTPError(http.StatusAlreadyReported, fmt.Errorf("plugin not present"))
+				}
+			}
+		}
+		if !hasSpigetVariable {
+			return echo.NewHTTPError(http.StatusNotFound, fmt.Errorf("no plugins to be deleted"))
+		}
+		response, err := client.ServiceUpdate(timeout, params.Server, servicedata[0].Version, servicedata[0].Spec, types.ServiceUpdateOptions{})
+		if err != nil {
+			return echo.NewHTTPError(http.StatusInternalServerError, err)
+		}
+		return c.JSON(http.StatusOK, response)
+	} else {
+		return err
+	}
+}

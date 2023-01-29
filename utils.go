@@ -29,7 +29,7 @@ func stringArrayToString(arr []string, delimiter string) (result string) {
 		if i == 0 {
 			result += str
 		} else {
-			result += ("," + str)
+			result += (delimiter + str)
 		}
 	}
 	return result

@@ -101,6 +101,7 @@ func main() {
 	api.DELETE("/:service/console", RCONShutdown)
 	api.GET("/:service/console", getLogs)
 	api.PATCH("/:service/plugins", addPlugin)
+	api.DELETE("/:service/plugins", deletePlugin)
 }
 
 func LogError(err error) {
