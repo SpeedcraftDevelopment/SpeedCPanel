@@ -23,3 +23,14 @@ func deleteFromAray(arr []string, f func(p string) bool) (newArray []string) {
 	}
 	return newArray
 }
+
+func stringArrayToString(arr []string, delimiter string) (result string) {
+	for i, str := range arr {
+		if i == 0 {
+			result += str
+		} else {
+			result += ("," + str)
+		}
+	}
+	return result
+}
