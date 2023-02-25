@@ -61,7 +61,7 @@ func setDomain(c echo.Context) error {
 		}
 		recordResponse2, err := cfApi.CreateDNSRecord(timeout, cloudflare.ZoneIdentifier(zone.ID), cloudflare.CreateDNSRecordParams{
 			Name:    fmt.Sprintf("_minecraft._tcp.%s", params.Domain),
-			Content: fmt.Sprintf("SRV 0 0 %s %s", cont.Port, params.Domain),
+			Content: fmt.Sprintf("SRV 0 0 %d %s", cont.Port, params.Domain),
 			TTL:     config.Plans[claims.UserID].TTL,
 			Type:    "SRV",
 			Data:    srv,
