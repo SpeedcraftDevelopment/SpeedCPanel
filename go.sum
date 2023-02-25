@@ -3,6 +3,8 @@ github.com/Microsoft/go-winio v0.6.0 h1:slsWYD/zyx7lCXoZVlvQrj0hPTM1HI4+v1sIda2y
 github.com/Microsoft/go-winio v0.6.0/go.mod h1:cTAf44im0RAYeL23bpB+fzCyDH2MJiz2BO69KH/soAE=
 github.com/cloudflare/cloudflare-go v0.59.0 h1:1QFD8h1bIMMVRsCsfoWPwF4eEeXFv59rW5PCVjkCvuk=
 github.com/cloudflare/cloudflare-go v0.59.0/go.mod h1:QaA8x4JI0/gA/tni1nTdyimFuyEGJi8cB7YSGoFhXFo=
+github.com/cloudflare/cloudflare-go v0.61.0 h1:h39WkNSA3CIMktE8rleiEwaJSc7bYCNCpzLAzCp//Kc=
+github.com/cloudflare/cloudflare-go v0.61.0/go.mod h1:9XgyMNcw8L8JhTKjasJNxx3vE7YM36g+GfNoIKxYPpI=
 github.com/davecgh/go-spew v1.1.0/go.mod h1:J7Y8YcW2NihsgmVo/mv3lAwl/skON4iLHjSsI+c5H38=
 github.com/davecgh/go-spew v1.1.1 h1:vj9j/u1bqnvCEfJOwUhtlOARqs3+rkHYY13jYWTU97c=
 github.com/davecgh/go-spew v1.1.1/go.mod h1:J7Y8YcW2NihsgmVo/mv3lAwl/skON4iLHjSsI+c5H38=

@@ -21,6 +21,7 @@ type Config struct {
 	Plans   map[string]struct {
 		MaxPlayers int
 		RCONTime   int
+		TTL        int
 	}
 	AllowedURLs []string
 	Traefik     struct {

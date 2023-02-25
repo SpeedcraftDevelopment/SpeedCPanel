@@ -11,6 +11,7 @@ import (
 	"os"
 	"time"
 
+	"github.com/cloudflare/cloudflare-go"
 	docker "github.com/docker/docker/client"
 	jwt "github.com/golang-jwt/jwt/v4"
 	echojwt "github.com/labstack/echo-jwt/v4"
@@ -29,6 +30,8 @@ var (
 	log    *logging.Logger
 	db     *mongo.Client
 	ctx    context.Context
+	cfApi  *cloudflare.API
+	cfAcc  cloudflare.Account
 )
 
 type jwtCustomClaims struct {
@@ -72,6 +75,10 @@ func main() {
 	server := echo.New()
 	defer server.Close()
 	defer cancel()
+	cfApi, err = cloudflare.New(os.Getenv("CLOUDFLARE_API_KEY"), os.Getenv("CLOUDFLARE_API_EMAIL"))
+	LogError(err)
+	cfAcc, _, err = cfApi.Account(ctx, cfApi.AccountID)
+	LogError(err)
 	encryptedKey, err := ioutil.ReadFile(os.Getenv("PEMPath"))
 	LogError(err)
 	decryptedKey := make([]byte, len(encryptedKey))
